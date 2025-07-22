@@ -1,15 +1,27 @@
 trigger:
-- main
+  - main
+
+pr:
+  - main
+
+variables:
+  - group: AI_CODE_REVIEW  # 你的变量组，需包含 MOONSHOT_API_KEY、WIKI_PAT 等
 
 pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.x'
-    addToPath: true
-- script: pip install python-docx
-  displayName: 'Install dependencies'
-- script: python auto_review.py --code_path $(Build.SourcesDirectory)
-  displayName: 'Run Auto Review' 
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      addToPath: true
+
+  - script: |
+      pip install -r requirements.txt || pip install python-docx pyyaml requests
+    displayName: 'Install dependencies'
+
+  - script: |
+      python auto_review.py \
+        --moonshot_api_key $(MOONSHOT_API_KEY) \
+        --wiki_pat $(WIKI_PAT)
+    displayName: 'Kimi AI 代码自动审核'
