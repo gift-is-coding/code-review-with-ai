@@ -17,7 +17,7 @@
 
 ## 目录结构
 
-- `code_standards.docx`  —— 代码标准文档（可自定义）
+- `code_standards.txt`  —— 代码标准文档（可自定义）
 - `auto_review.py`      —— 自动 review 脚本，AI 审核 PR/commit 变更
 - `azure-pipelines.yml` —— Azure DevOps Pipeline 示例配置
 - `config.yaml`         —— （可选）参数配置文件
@@ -28,12 +28,12 @@
 ## 快速开始
 
 ### 1. 配置代码标准
-编辑 `code_standards.docx`，定义你的团队代码规范。
+编辑 `code_standards.txt`，定义你的团队代码规范。
 
 ### 2. 配置参数（推荐 config.yaml）
 你可以将常用参数写入 `config.yaml`，如：
 ```yaml
-openai_api_key: ${OPENAI_API_KEY}   # 推荐用 pipeline secret 注入
+moonshot_api_key: ${MOONSHOT_API_KEY}   # 推荐用 pipeline secret 注入
 standards: code_standards.docx
 output: ai_review_result.md
 pr_only: true

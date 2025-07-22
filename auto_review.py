@@ -1,10 +1,10 @@
 import sys
 import os
 import argparse
-from docx import Document
 import subprocess
 import yaml
 import requests
+import datetime
 
 SUPPORTED_EXTS = ['.py', '.js', '.ts', '.jsx', '.tsx', '.java', '.go', '.cpp', '.c', '.cs', '.vue', '.html', '.css', '.json', '.sh']
 
@@ -16,14 +16,9 @@ def load_config(config_path='config.yaml'):
     return {}
 
 
-def load_standards(docx_path):
-    doc = Document(docx_path)
-    rules = []
-    for para in doc.paragraphs:
-        text = para.text.strip()
-        if text:
-            rules.append(text)
-    return '\n'.join(rules)
+def load_standards(txt_path):
+    with open(txt_path, 'r', encoding='utf-8') as f:
+        return f.read()
 
 
 def get_changed_files(pr_only, code_types=None):
@@ -58,7 +53,6 @@ def get_changed_files(pr_only, code_types=None):
 
 
 def kimi_review_code(standard, code_files, api_key, api_base=None):
-    # Moonshot/kimi API endpoint
     if api_base is None:
         api_base = 'https://api.moonshot.cn/v1/chat/completions'
     headers = {
@@ -98,7 +92,15 @@ def kimi_review_code(standard, code_files, api_key, api_base=None):
     return feedbacks
 
 
-def save_review_result(feedbacks, output_path='ai_review_result.md'):
+def save_review_result(feedbacks, output_path=None):
+    result_dir = 'result'
+    if not os.path.exists(result_dir):
+        os.makedirs(result_dir)
+    if output_path is None:
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        output_path = os.path.join(result_dir, f'ai_review_result_{timestamp}.md')
+    else:
+        output_path = os.path.join(result_dir, output_path) if not output_path.startswith(result_dir) else output_path
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write('# AI 代码审核结果\n\n')
         for fname, feedback in feedbacks:
@@ -115,11 +117,11 @@ def main():
     config = load_config()
     parser = argparse.ArgumentParser(description='Kimi AI 自动代码 review 脚本')
     parser.add_argument('--code_path', required=False, help='待检查代码目录或文件（全量模式下使用）')
-    parser.add_argument('--standards', default=config.get('standards', 'code_standards.docx'), help='代码标准文档')
+    parser.add_argument('--standards', default=config.get('standards', 'code_standards.txt'), help='代码标准文档(txt)')
     parser.add_argument('--moonshot_api_key', default=config.get('moonshot_api_key'), help='Moonshot/Kimi API Key')
     parser.add_argument('--moonshot_api_base', default=config.get('moonshot_api_base'), help='Moonshot API Base URL')
     parser.add_argument('--pr_only', action='store_true', default=config.get('pr_only', False), help='仅审查 PR/commit 变更代码')
-    parser.add_argument('--output', default=config.get('output', 'ai_review_result.md'), help='审核结果输出路径')
+    parser.add_argument('--output', default=None, help='审核结果输出路径（如不指定则自动加时间戳）')
     parser.add_argument('--wiki_url', default=config.get('wiki_url'), help='Azure DevOps Wiki 页面 API 地址')
     parser.add_argument('--wiki_pat', default=config.get('wiki_pat'), help='用于 Wiki 上传的 PAT Token')
     parser.add_argument('--code_types', nargs='*', default=config.get('code_types', SUPPORTED_EXTS), help='需要审核的代码文件扩展名列表')
