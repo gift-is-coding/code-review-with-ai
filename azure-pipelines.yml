@@ -23,5 +23,6 @@ steps:
   - script: |
       python auto_review.py \
         --moonshot_api_key $(MOONSHOT_API_KEY) \
-        --wiki_pat $(WIKI_PAT)
+        --wiki_pat $(WIKI_PAT) \
+        --wiki_url_base $(WIKI_URL_BASE)
     displayName: 'Kimi AI 代码自动审核'
