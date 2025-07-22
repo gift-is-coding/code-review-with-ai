@@ -19,3 +19,4 @@ code_types:
   - .css
 wiki_url: https://dev.azure.com/yourorg/yourproject/_apis/wiki/wikis/yourwiki/pages?path=/AIReview
 wiki_pat: ${WIKI_PAT}  # 推荐用 pipeline secret 注入 
+moonshot_api_key: ${MOONSHOT_API_KEY} 
