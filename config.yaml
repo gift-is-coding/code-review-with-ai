@@ -1,0 +1,21 @@
+# AI 代码审核配置示例
+# 推荐将 openai_api_key 通过 pipeline secret 注入
+openai_api_key: ${OPENAI_API_KEY}
+standards: code_standards.docx
+output: ai_review_result.md
+pr_only: true
+# 支持的代码文件扩展名，可根据实际项目调整
+code_types:
+  - .py
+  - .js
+  - .ts
+  - .jsx
+  - .tsx
+  - .java
+  - .go
+  - .cpp
+  - .vue
+  - .html
+  - .css
+wiki_url: https://dev.azure.com/yourorg/yourproject/_apis/wiki/wikis/yourwiki/pages?path=/AIReview
+wiki_pat: ${WIKI_PAT}  # 推荐用 pipeline secret 注入 
