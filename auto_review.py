@@ -2,17 +2,19 @@ import sys
 import os
 import argparse
 from docx import Document
-import openai
 import subprocess
 import yaml
+import requests
 
 SUPPORTED_EXTS = ['.py', '.js', '.ts', '.jsx', '.tsx', '.java', '.go', '.cpp', '.c', '.cs', '.vue', '.html', '.css', '.json', '.sh']
+
 
 def load_config(config_path='config.yaml'):
     if os.path.exists(config_path):
         with open(config_path, 'r', encoding='utf-8') as f:
             return yaml.safe_load(f)
     return {}
+
 
 def load_standards(docx_path):
     doc = Document(docx_path)
@@ -25,10 +27,6 @@ def load_standards(docx_path):
 
 
 def get_changed_files(pr_only, code_types=None):
-    """
-    获取本次 PR/commit 变更的代码文件及其 diff 内容，支持多语言。
-    code_types: ['.py', '.js', ...]
-    """
     if code_types is None:
         code_types = SUPPORTED_EXTS
     changed_files = []
@@ -59,8 +57,15 @@ def get_changed_files(pr_only, code_types=None):
     return changed_files
 
 
-def ai_review_code(standard, code_files, openai_api_key):
-    openai.api_key = openai_api_key
+def kimi_review_code(standard, code_files, api_key, api_base=None):
+    # Moonshot/kimi API endpoint
+    if api_base is None:
+        api_base = 'https://api.moonshot.cn/v1/chat/completions'
+    headers = {
+        'Authorization': f'Bearer {api_key}',
+        'Content-Type': 'application/json'
+    }
+    model = 'kimi-k2-0711-preview'
     feedbacks = []
     for fname, code in code_files:
         ext = os.path.splitext(fname)[1]
@@ -75,15 +80,20 @@ def ai_review_code(standard, code_files, openai_api_key):
 
 请用中文输出审核结果。
 """
+        data = {
+            "model": model,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "max_tokens": 800
+        }
         try:
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=800
-            )
-            feedback = response['choices'][0]['message']['content']
+            resp = requests.post(api_base, headers=headers, json=data, timeout=120)
+            resp.raise_for_status()
+            result = resp.json()
+            feedback = result['choices'][0]['message']['content']
         except Exception as e:
-            feedback = f"{fname}: AI 审核失败 - {e}"
+            feedback = f"{fname}: Kimi 审核失败 - {e}"
         feedbacks.append((fname, feedback))
     return feedbacks
 
@@ -102,12 +112,12 @@ def upload_to_wiki(md_path, wiki_url, pat_token):
 
 
 def main():
-    # 1. 先加载 config.yaml
     config = load_config()
-    parser = argparse.ArgumentParser(description='AI 自动代码 review 脚本')
+    parser = argparse.ArgumentParser(description='Kimi AI 自动代码 review 脚本')
     parser.add_argument('--code_path', required=False, help='待检查代码目录或文件（全量模式下使用）')
     parser.add_argument('--standards', default=config.get('standards', 'code_standards.docx'), help='代码标准文档')
-    parser.add_argument('--openai_api_key', default=config.get('openai_api_key'), help='OpenAI API Key')
+    parser.add_argument('--moonshot_api_key', default=config.get('moonshot_api_key'), help='Moonshot/Kimi API Key')
+    parser.add_argument('--moonshot_api_base', default=config.get('moonshot_api_base'), help='Moonshot API Base URL')
     parser.add_argument('--pr_only', action='store_true', default=config.get('pr_only', False), help='仅审查 PR/commit 变更代码')
     parser.add_argument('--output', default=config.get('output', 'ai_review_result.md'), help='审核结果输出路径')
     parser.add_argument('--wiki_url', default=config.get('wiki_url'), help='Azure DevOps Wiki 页面 API 地址')
@@ -122,7 +132,7 @@ def main():
     else:
         code_files = get_changed_files(pr_only=False, code_types=code_types)
     print(f'共需审核 {len(code_files)} 个文件...')
-    feedbacks = ai_review_code(standard, code_files, args.openai_api_key)
+    feedbacks = kimi_review_code(standard, code_files, args.moonshot_api_key, args.moonshot_api_base)
     save_review_result(feedbacks, args.output)
     if args.wiki_url and args.wiki_pat:
         upload_to_wiki(args.output, args.wiki_url, args.wiki_pat)

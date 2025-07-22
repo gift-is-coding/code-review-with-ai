@@ -1,5 +1,15 @@
 1. 每行代码不超过 120 个字符。
-2. 变量名应使用小写字母和下划线（snake_case）。
-3. 函数应有 docstring 注释。
-4. 禁止使用 print 进行日志输出，推荐 logging。
-5. 文件必须以空行结尾。 
+2. 变量名应使用小写字母和下划线（snake_case，适用于 Python），或小驼峰（camelCase，适用于 JS/TS/前端）。
+3. 函数/方法应有 docstring 或 JSDoc 注释，描述功能、参数和返回值。
+4. 禁止在生产代码中使用 print、console.log，推荐使用 logging 或统一日志方案。
+5. 文件必须以空行结尾。
+6. 前端组件（如 React/Vue）应有 PropTypes/TypeScript 类型声明。
+7. 禁止硬编码敏感信息（如密码、密钥、token 等）。
+8. 代码应避免重复（DRY 原则），提取公共逻辑。
+9. 变量、函数、类命名应语义清晰，避免无意义缩写。
+10. 前端样式应避免 !important，推荐使用模块化或 CSS-in-JS。
+11. 后端接口应有异常处理，避免未捕获异常导致服务崩溃。
+12. 重要业务逻辑应有单元测试覆盖。
+13. 依赖包应有版本锁定（如 package-lock.json、requirements.txt）。
+14. 代码提交信息应简明扼要，描述本次变更内容。
+15. 代码应遵循团队统一的 lint/format 规范（如 eslint、prettier、black、flake8 等）。 
