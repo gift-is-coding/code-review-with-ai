@@ -25,9 +25,27 @@ steps:
     displayName: 'Install dependencies'
 
   - script: |
+      echo "当前工作目录: $(pwd)"
+      echo "列出文件:"
+      ls -la
+      echo "检查 result 目录:"
+      ls -la result/ || echo "result 目录不存在"
+    displayName: 'Debug: 检查工作目录'
+
+  - script: |
       python auto_review.py \
-        --moonshot_api_key $(MOONSHOT_API_KEY)
+        --moonshot_api_key $(MOONSHOT_API_KEY) \
+        --pr_only
     displayName: 'Kimi AI 代码自动审核'
+
+  - script: |
+      echo "审核完成，检查 result 目录:"
+      ls -la result/ || echo "result 目录不存在"
+      if [ -d "result" ]; then
+        echo "result 目录内容:"
+        ls -la result/
+      fi
+    displayName: 'Debug: 检查审核结果'
 
   - task: PublishBuildArtifacts@1
     inputs:
