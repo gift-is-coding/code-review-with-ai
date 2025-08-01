@@ -9,7 +9,7 @@ pr:
   - main
 
 variables:
-  - group: AI_CODE_REVIEW  # 你的变量组，需包含 MOONSHOT_API_KEY
+  - group: AI_CODE_REVIEW  # 你的变量组，需包含 MOONSHOT_API_KEY、WIKI_URL_BASE、WIKI_PAT
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -35,8 +35,10 @@ steps:
   - script: |
       python auto_review.py \
         --moonshot_api_key $(MOONSHOT_API_KEY) \
+        --wiki_url_base $(WIKI_URL_BASE) \
+        --wiki_pat $(WIKI_PAT) \
         --pr_only
-    displayName: 'Kimi AI 代码自动审核'
+    displayName: 'Kimi AI 代码自动审核 + Wiki 上传'
 
   - script: |
       echo "审核完成，检查 result 目录:"

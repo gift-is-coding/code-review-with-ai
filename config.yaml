@@ -16,4 +16,7 @@ code_types:
   - .cpp
   - .vue
   - .html
-  - .css 
+  - .css
+# Azure DevOps Wiki 配置
+wiki_url_base: ${WIKI_URL_BASE}
+wiki_pat: ${WIKI_PAT} 

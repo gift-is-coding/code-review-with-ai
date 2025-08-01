@@ -5,6 +5,7 @@ import subprocess
 import yaml
 import requests
 import datetime
+import base64
 
 # this is for pipeline testing
 def get_latest_result_file(result_dir='result'):
@@ -148,6 +149,58 @@ def save_review_result(feedbacks, output_path=None):
     return output_path
 
 
+def build_wiki_url(wiki_url_base, timestamp=None):
+    """构建 Azure DevOps Wiki API URL"""
+    if timestamp is None:
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    page_path = f'/AIReview/{timestamp}'
+    return f'{wiki_url_base}?path={page_path}&api-version=7.1-preview.1'
+
+
+def upload_to_wiki(md_path, wiki_url_base, pat_token):
+    """将审核结果上传到 Azure DevOps Wiki"""
+    # 读取 markdown 内容
+    with open(md_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    # 组装 API 请求
+    headers = {
+        'Content-Type': 'application/json',
+    }
+    
+    # 兼容 Azure DevOps PAT 直接 base64
+    if not pat_token.startswith('Basic '):
+        pat_b64 = base64.b64encode(f':{pat_token}'.encode('utf-8')).decode('utf-8')
+        headers['Authorization'] = f'Basic {pat_b64}'
+    else:
+        headers['Authorization'] = pat_token
+    
+    # 组装 body
+    data = {
+        "content": content,
+        "contentType": "markdown"
+    }
+    
+    # 生成唯一页面 url
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    wiki_url = build_wiki_url(wiki_url_base, timestamp)
+    
+    # 发送请求
+    try:
+        resp = requests.put(wiki_url, headers=headers, json=data, timeout=30)
+        print(f'Wiki API URL: {wiki_url}')
+        print(f'HTTP Status: {resp.status_code}')
+        print(f'Response Text: {resp.text}')
+        resp.raise_for_status()
+        print(f'✅ Wiki 上传成功: {wiki_url}')
+        return True
+    except Exception as e:
+        print(f'❌ Wiki 上传失败: {e}')
+        if 'resp' in locals():
+            print(f'详细响应: 状态码={resp.status_code}, 内容={resp.text}')
+        return False
+
+
 def main():
     print("=== AI 代码审核脚本开始 ===")
     print(f"当前工作目录: {os.getcwd()}")
@@ -162,6 +215,8 @@ def main():
     parser.add_argument('--pr_only', action='store_true', default=config.get('pr_only', False), help='仅审查 PR/commit 变更代码')
     parser.add_argument('--output', default=None, help='审核结果输出路径（如不指定则自动加时间戳）')
     parser.add_argument('--code_types', nargs='*', default=config.get('code_types', SUPPORTED_EXTS), help='需要审核的代码文件扩展名列表')
+    parser.add_argument('--wiki_url_base', default=config.get('wiki_url_base'), help='Azure DevOps Wiki API 基础地址')
+    parser.add_argument('--wiki_pat', default=config.get('wiki_pat'), help='用于 Wiki 上传的 PAT Token')
     args = parser.parse_args()
 
     print(f"参数: pr_only={args.pr_only}, standards={args.standards}")
@@ -189,6 +244,18 @@ def main():
     
     print(f"审核完成，共生成 {len(feedbacks)} 个反馈...")
     result_path = save_review_result(feedbacks, args.output)
+    
+    # 上传到 Wiki
+    if args.wiki_url_base and args.wiki_pat:
+        print("开始上传审核结果到 Wiki...")
+        latest_result = get_latest_result_file('result')
+        if latest_result:
+            upload_to_wiki(latest_result, args.wiki_url_base, args.wiki_pat)
+        else:
+            print("❌ 没有找到审核结果文件，无法上传到 Wiki")
+    else:
+        print("⚠️ 未配置 Wiki 参数，跳过 Wiki 上传")
+    
     print(f"=== 审核脚本完成，结果保存到: {result_path} ===")
 
 if __name__ == "__main__":
