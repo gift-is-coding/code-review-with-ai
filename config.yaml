@@ -16,6 +16,4 @@ code_types:
   - .cpp
   - .vue
   - .html
-  - .css
-wiki_url_base: https://dev.azure.com/yourorg/yourproject/_apis/wiki/wikis/yourwiki/pages
-wiki_pat: ${WIKI_PAT}  # 推荐用 pipeline secret 注入 
+  - .css 
