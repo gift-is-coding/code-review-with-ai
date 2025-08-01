@@ -1,0 +1,33 @@
+name: Sync to Azure DevOps
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  sync-to-azure-devops:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync to Azure DevOps
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.AZURE_DEVOPS_REPO }}
+          token: ${{ secrets.AZURE_DEVOPS_TOKEN }}
+          path: azure-devops-repo
+
+      - name: Copy files to Azure DevOps repo
+        run: |
+          cp -r * azure-devops-repo/
+          cd azure-devops-repo
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Sync from GitHub: ${{ github.sha }}" || exit 0
+          git push 

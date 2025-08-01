@@ -1,3 +1,7 @@
+# Azure DevOps Pipeline 配置
+# 此 pipeline 可以直接从 GitHub 仓库触发
+# 在 Azure DevOps 中创建 pipeline 时，选择 GitHub 作为代码源
+
 trigger:
   - main
 

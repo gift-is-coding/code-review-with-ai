@@ -23,6 +23,51 @@
 - `config.yaml`           —— 参数配置文件
 - `README.md`             —— 项目说明
 - `result/`               —— 审核结果输出目录
+- `.github/workflows/`    —— GitHub Actions 工作流（用于同步到 Azure DevOps）
+- `sync-to-azure-devops.sh` —— 手动同步脚本
+
+---
+
+## Azure DevOps 与 GitHub 同步
+
+本项目支持多种方式将 GitHub 代码同步到 Azure DevOps：
+
+### 方案一：Azure DevOps 直接使用 GitHub 源（推荐）
+
+1. **在 Azure DevOps 中配置 GitHub 连接**
+   - 进入 Azure DevOps 项目 → `Project Settings` → `Service connections`
+   - 点击 `New service connection` → 选择 `GitHub`
+   - 授权 Azure DevOps 访问你的 GitHub 账户
+
+2. **创建 Pipeline**
+   - 进入 `Pipelines` → `New pipeline`
+   - 选择 `GitHub` 作为代码源
+   - 选择仓库 `gift-is-coding/code-review-with-ai`
+   - 选择 `Existing Azure Pipelines YAML file`
+   - 选择 `azure-pipelines.yml`
+
+### 方案二：使用 GitHub Actions 自动同步
+
+1. **配置 GitHub Secrets**
+   - 进入 GitHub 仓库 → `Settings` → `Secrets and variables` → `Actions`
+   - 添加以下 secrets：
+     - `AZURE_DEVOPS_REPO`: Azure DevOps 仓库 URL
+     - `AZURE_DEVOPS_TOKEN`: Azure DevOps Personal Access Token
+
+2. **自动同步**
+   - 每次推送到 GitHub main 分支时，会自动同步到 Azure DevOps
+
+### 方案三：手动同步
+
+使用提供的同步脚本：
+
+```bash
+# 编辑脚本中的 Azure DevOps 仓库 URL
+vim sync-to-azure-devops.sh
+
+# 运行同步
+./sync-to-azure-devops.sh
+```
 
 ---
 
