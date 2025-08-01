@@ -44,13 +44,29 @@ steps:
       if [ -d "result" ]; then
         echo "result 目录内容:"
         ls -la result/
+        echo "找到最新的审核结果文件:"
+        ls -t result/ai_review_result_*.md | head -1 || echo "没有找到审核结果文件"
       fi
     displayName: 'Debug: 检查审核结果'
 
+  - script: |
+      # 只复制最新的审核结果文件到临时目录
+      mkdir -p temp_artifacts
+      if [ -d "result" ]; then
+        latest_file=$(ls -t result/ai_review_result_*.md | head -1)
+        if [ -n "$latest_file" ]; then
+          cp "$latest_file" temp_artifacts/
+          echo "已复制最新审核结果: $latest_file"
+        else
+          echo "没有找到审核结果文件"
+        fi
+      fi
+    displayName: '准备最新的审核结果'
+
   - task: PublishBuildArtifacts@1
     inputs:
-      pathToPublish: 'result'
+      pathToPublish: 'temp_artifacts'
       artifactName: 'AI-Review-Results'
       publishLocation: 'Container'
-    displayName: '发布 AI 审核结果到 Build Artifacts'
+    displayName: '发布最新的 AI 审核结果到 Build Artifacts'
     condition: succeededOrFailed()
