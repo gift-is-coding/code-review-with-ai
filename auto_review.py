@@ -7,7 +7,7 @@ import requests
 import datetime
 import base64
 
-
+# this is for pipeline testing
 def get_latest_result_file(result_dir='result'):
     files = [f for f in os.listdir(result_dir) if f.startswith('ai_review_result_') and f.endswith('.md')]
     if not files:
