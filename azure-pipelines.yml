@@ -26,3 +26,11 @@ steps:
         --wiki_pat $(WIKI_PAT) \
         --wiki_url_base $(WIKI_URL_BASE)
     displayName: 'Kimi AI 代码自动审核'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: 'result'
+      artifactName: 'AI-Review-Results'
+      publishLocation: 'Container'
+    displayName: '发布 AI 审核结果到 Build Artifacts'
+    condition: succeededOrFailed()
