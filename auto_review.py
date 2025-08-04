@@ -39,32 +39,44 @@ def get_changed_files(pr_only, code_types=None):
         base = os.environ.get('SYSTEM_PULLREQUEST_TARGETBRANCH') or os.environ.get('BUILD_SOURCEBRANCHNAME')
         head = os.environ.get('SYSTEM_PULLREQUEST_SOURCEBRANCH') or os.environ.get('BUILD_SOURCEBRANCH')
         
-        print(f"Debug: base={base}, head={head}")
+        print(f"Debug: 环境变量检查:")
+        print(f"  SYSTEM_PULLREQUEST_TARGETBRANCH: {os.environ.get('SYSTEM_PULLREQUEST_TARGETBRANCH')}")
+        print(f"  SYSTEM_PULLREQUEST_SOURCEBRANCH: {os.environ.get('SYSTEM_PULLREQUEST_SOURCEBRANCH')}")
+        print(f"  BUILD_SOURCEBRANCHNAME: {os.environ.get('BUILD_SOURCEBRANCHNAME')}")
+        print(f"  BUILD_SOURCEBRANCH: {os.environ.get('BUILD_SOURCEBRANCH')}")
+        print(f"Debug: 解析后的 base={base}, head={head}")
         
         if base and head:
             # 清理分支名称
             base = base.replace('refs/heads/', '').replace('refs/pull/', '')
             head = head.replace('refs/heads/', '').replace('refs/pull/', '')
             
-            # 尝试不同的 diff 命令
-            diff_cmd = f'git diff --name-only origin/{base}...origin/{head}'
-            print(f"Debug: 执行命令: {diff_cmd}")
+            print(f"Debug: 清理后的 base={base}, head={head}")
             
-            result = subprocess.run(diff_cmd, shell=True, capture_output=True, text=True)
-            print(f"Debug: diff 命令输出: {result.stdout}")
-            print(f"Debug: diff 命令错误: {result.stderr}")
+            # 尝试多种 diff 命令
+            diff_commands = [
+                f'git diff --name-only origin/{base}...origin/{head}',
+                f'git diff --name-only {base}...{head}',
+                f'git diff --name-only HEAD~1',
+                'git diff --name-only HEAD~1..HEAD'
+            ]
             
-            if result.returncode != 0:
-                # 如果上面的命令失败，尝试其他方式
-                diff_cmd = f'git diff --name-only {base}...{head}'
-                print(f"Debug: 尝试备用命令: {diff_cmd}")
+            for i, diff_cmd in enumerate(diff_commands):
+                print(f"Debug: 尝试命令 {i+1}: {diff_cmd}")
                 result = subprocess.run(diff_cmd, shell=True, capture_output=True, text=True)
-                print(f"Debug: 备用命令输出: {result.stdout}")
+                print(f"Debug: 命令 {i+1} 返回码: {result.returncode}")
+                print(f"Debug: 命令 {i+1} 输出: {result.stdout}")
+                print(f"Debug: 命令 {i+1} 错误: {result.stderr}")
+                
+                if result.returncode == 0 and result.stdout.strip():
+                    print(f"Debug: 命令 {i+1} 成功，使用此结果")
+                    break
         else:
             # 如果没有 PR 信息，使用最近的提交
             diff_cmd = 'git diff --name-only HEAD~1'
             print(f"Debug: 使用最近提交: {diff_cmd}")
             result = subprocess.run(diff_cmd, shell=True, capture_output=True, text=True)
+            print(f"Debug: 最近提交命令输出: {result.stdout}")
         
         files = [f for f in result.stdout.splitlines() if f.strip() and os.path.splitext(f)[1] in code_types]
         print(f"Debug: 找到的变更文件: {files}")
@@ -153,8 +165,25 @@ def build_wiki_url(wiki_url_base, timestamp=None):
     """构建 Azure DevOps Wiki API URL"""
     if timestamp is None:
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    # 处理 URL 格式转换
+    if '_wiki/wikis/' in wiki_url_base:
+        # 从前端 URL 转换为 API URL
+        wiki_url_base = wiki_url_base.replace('_wiki/wikis/', '_apis/wiki/wikis/')
+    
+    # 确保 URL 以 /pages 结尾
+    if not wiki_url_base.endswith('/pages'):
+        wiki_url_base = wiki_url_base.rstrip('/') + '/pages'
+    
     page_path = f'/AIReview/{timestamp}'
-    return f'{wiki_url_base}?path={page_path}&api-version=7.1-preview.1'
+    full_url = f'{wiki_url_base}?path={page_path}&api-version=7.1-preview.1'
+    
+    print(f"Debug: Wiki URL 构建:")
+    print(f"  原始 URL: {wiki_url_base}")
+    print(f"  页面路径: {page_path}")
+    print(f"  完整 URL: {full_url}")
+    
+    return full_url
 
 
 def upload_to_wiki(md_path, wiki_url_base, pat_token):
