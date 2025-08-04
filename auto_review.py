@@ -7,6 +7,12 @@ import requests
 import datetime
 
 ### some test nonsense
+## make more changes
+def test_nonsense2():
+    print("this is a test")
+    print("this is a test")
+
+
 def test_nonsense():
     print("this is a test")
     print("this is a test")
