@@ -6,6 +6,11 @@ import yaml
 import requests
 import datetime
 
+### some test nonsense
+def test_nonsense():
+    print("this is a test")
+    print("this is a test")
+
 # this is for pipeline testing
 def get_latest_result_file(result_dir='result'):
     files = [f for f in os.listdir(result_dir) if f.startswith('ai_review_result_') and f.endswith('.md')]
