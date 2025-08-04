@@ -1,6 +1,6 @@
 # AI 代码审核配置示例
-# 推荐将 moonshot_api_key 通过 pipeline secret 注入
-moonshot_api_key: ${MOONSHOT_API_KEY}
+# 本地测试配置 - 请使用实际的 API Key 和 Token
+moonshot_api_key: your-moonshot-api-key-here
 standards: code_standards.txt
 output: ai_review_result.md
 pr_only: true
@@ -18,5 +18,5 @@ code_types:
   - .html
   - .css
 # Azure DevOps Wiki 配置
-wiki_url_base: ${WIKI_URL_BASE}
-wiki_pat: ${WIKI_PAT} 
+wiki_url_base: https://dev.azure.com/giiift/test-for-HLS/_wiki/wikis/test-for-HLS.wiki/
+wiki_pat: 8lQXkDczPXpTzYDZBeUVDqT3BakojY1jawBWGGu7W24SQfkqA4kDJQQJ99BGACAAAAAAAAAAAAASAZDO35h4 

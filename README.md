@@ -89,6 +89,8 @@ wiki_url_base: ${WIKI_URL_BASE}
 wiki_pat: ${WIKI_PAT}
 ```
 
+> ⚠️ **安全提醒**：`config.yaml` 文件包含敏感信息（API Key、PAT Token），已被添加到 `.gitignore` 中，不会被提交到版本控制系统。请确保在本地创建此文件，并妥善保管其中的敏感信息。
+
 ### 3. 配置 API Keys 和 Wiki 设置
 - 在 Azure DevOps 项目设置中，进入 `Pipelines > Library > Variable groups`，新建变量组如 `AI_CODE_REVIEW`。
 - 添加以下变量：
