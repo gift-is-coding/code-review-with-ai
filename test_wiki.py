@@ -83,6 +83,6 @@ def test_wiki_connection(wiki_url_base, pat_token):
 if __name__ == "__main__":
     # 使用你提供的凭据
     wiki_url = "https://dev.azure.com/giiift/test-for-HLS/_wiki/wikis/test-for-HLS.wiki/"
-    pat_token = "8lQXkDczPXpTzYDZBeUVDqT3BakojY1jawBWGGu7W24SQfkqA4kDJQQJ99BGACAAAAAAAAAAAAASAZDO35h4"
+    pat_token = ""
     
     test_wiki_connection(wiki_url, pat_token) 
