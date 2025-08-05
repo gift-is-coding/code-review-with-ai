@@ -1,0 +1,22 @@
+# JavaScript 项目示例 - Azure DevOps Pipeline
+# 使用 AI 代码审核模板
+
+trigger:
+  - main
+
+pr:
+  - main
+
+extends:
+  template: https://github.com/gift-is-coding/code-review-with-ai/templates/ai-review.yml
+  parameters:
+    projectName: 'javascript-project'
+    standardsFile: 'standards/javascript_standards.txt'
+    codeTypes:
+      - '.js'
+      - '.ts'
+      - '.jsx'
+      - '.tsx'
+      - '.vue'
+    enableWikiUpload: true
+    enableArtifacts: true 

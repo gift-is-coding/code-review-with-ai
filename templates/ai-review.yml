@@ -1,0 +1,121 @@
+# Azure DevOps Pipeline 模板 - AI 代码审核
+# 使用方法：
+# extends:
+#   template: templates/ai-review.yml
+#   parameters:
+#     projectName: 'your-project-name'
+#     standardsFile: 'code_standards.txt'
+#     codeTypes:
+#       - '.py'
+#       - '.js'
+
+parameters:
+  - name: projectName
+    type: string
+    default: 'default-project'
+  - name: standardsFile
+    type: string
+    default: 'code_standards.txt'
+  - name: codeTypes
+    type: object
+    default:
+      - '.py'
+      - '.js'
+      - '.ts'
+      - '.jsx'
+      - '.tsx'
+      - '.java'
+      - '.go'
+      - '.cpp'
+      - '.vue'
+      - '.html'
+      - '.css'
+  - name: enableWikiUpload
+    type: boolean
+    default: true
+  - name: enableArtifacts
+    type: boolean
+    default: true
+
+variables:
+  - group: AI_CODE_REVIEW  # 需要在 Azure DevOps 中创建此变量组
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  # Git 配置和调试信息
+  - script: |
+      echo "=== AI 代码审核 - 项目: ${{ parameters.projectName }} ==="
+      echo "当前工作目录: $(pwd)"
+      echo "Git 版本:"
+      git --version
+      echo "Git 远程仓库:"
+      git remote -v
+      echo "当前分支:"
+      git branch -a
+      echo "Git 日志 (最近5次):"
+      git log --oneline -5
+      echo "环境变量检查:"
+      echo "  SYSTEM_PULLREQUEST_TARGETBRANCH: $SYSTEM_PULLREQUEST_TARGETBRANCH"
+      echo "  SYSTEM_PULLREQUEST_SOURCEBRANCH: $SYSTEM_PULLREQUEST_SOURCEBRANCH"
+      echo "  BUILD_SOURCEBRANCHNAME: $BUILD_SOURCEBRANCHNAME"
+      echo "  BUILD_SOURCEBRANCH: $BUILD_SOURCEBRANCH"
+      echo "  BUILD_SOURCEVERSION: $BUILD_SOURCEVERSION"
+    displayName: 'Debug: Git 和环境变量信息'
+
+  # Python 环境设置
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.x'
+      addToPath: true
+
+  # 安装依赖
+  - script: |
+      pip install -r requirements.txt || pip install python-docx pyyaml requests
+    displayName: 'Install dependencies'
+
+  # 测试 Wiki 连接（如果启用）
+  - script: |
+      if [ "${{ parameters.enableWikiUpload }}" == "true" ]; then
+        echo "=== 测试 Wiki 连接 ==="
+        python test_wiki.py
+      else
+        echo "Wiki 上传已禁用，跳过连接测试"
+      fi
+    displayName: '测试 Wiki 连接'
+    condition: eq('${{ parameters.enableWikiUpload }}', 'true')
+
+  # 执行代码审核
+  - script: |
+      echo "=== 执行代码审核 ==="
+      python auto_review.py \
+        --project_name "${{ parameters.projectName }}" \
+        --standards "${{ parameters.standardsFile }}" \
+        --code_types ${{ join(parameters.codeTypes, ' ') }} \
+        --moonshot_api_key $(MOONSHOT_API_KEY) \
+        --wiki_url_base $(WIKI_URL_BASE) \
+        --wiki_pat $(WIKI_PAT) \
+        --pr_only
+    displayName: 'AI 代码审核'
+
+  # 检查审核结果
+  - script: |
+      echo "=== 检查审核结果 ==="
+      ls -la result/ || echo "result 目录不存在"
+      if [ -d "result" ]; then
+        echo "result 目录内容:"
+        ls -la result/
+        echo "找到最新的审核结果文件:"
+        ls -t result/ai_review_result_*.md | head -1 || echo "没有找到审核结果文件"
+      fi
+    displayName: 'Debug: 检查审核结果'
+
+  # 发布审核结果到 Artifacts（如果启用）
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: 'result'
+      artifactName: 'AI-Review-Results-${{ parameters.projectName }}'
+      publishLocation: 'Container'
+    displayName: '发布 AI 审核结果到 Build Artifacts'
+    condition: and(succeededOrFailed(), eq('${{ parameters.enableArtifacts }}', 'true'))

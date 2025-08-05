@@ -1,0 +1,20 @@
+# Python 项目示例 - Azure DevOps Pipeline
+# 使用 AI 代码审核模板
+
+trigger:
+  - main
+
+pr:
+  - main
+
+extends:
+  template: https://github.com/gift-is-coding/code-review-with-ai/templates/ai-review.yml
+  parameters:
+    projectName: 'python-project'
+    standardsFile: 'standards/python_standards.txt'
+    codeTypes:
+      - '.py'
+      - '.pyx'
+      - '.pyi'
+    enableWikiUpload: true
+    enableArtifacts: true 

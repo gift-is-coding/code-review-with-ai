@@ -1,0 +1,22 @@
+# Java 项目示例 - Azure DevOps Pipeline
+# 使用 AI 代码审核模板
+
+trigger:
+  - main
+
+pr:
+  - main
+
+extends:
+  template: https://github.com/gift-is-coding/code-review-with-ai/templates/ai-review.yml
+  parameters:
+    projectName: 'java-project'
+    standardsFile: 'standards/java_standards.txt'
+    codeTypes:
+      - '.java'
+      - '.xml'
+      - '.properties'
+      - '.yml'
+      - '.yaml'
+    enableWikiUpload: true
+    enableArtifacts: true 
