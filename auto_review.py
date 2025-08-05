@@ -143,17 +143,19 @@ def kimi_review_code(standard, code_files, api_key, api_base=None):
     return feedbacks
 
 
-def save_review_result(feedbacks, output_path=None):
+def save_review_result(feedbacks, output_path=None, project_name='unknown-project'):
     result_dir = 'result'
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
     if output_path is None:
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_path = os.path.join(result_dir, f'ai_review_result_{timestamp}.md')
+        output_path = os.path.join(result_dir, f'ai_review_result_{project_name}_{timestamp}.md')
     else:
         output_path = os.path.join(result_dir, output_path) if not output_path.startswith(result_dir) else output_path
     with open(output_path, 'w', encoding='utf-8') as f:
-        f.write('# AI 代码审核结果\n\n')
+        f.write(f'# AI 代码审核结果 - {project_name}\n\n')
+        f.write(f'**项目**: {project_name}\n')
+        f.write(f'**审核时间**: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n\n')
         for fname, feedback in feedbacks:
             f.write(f'## 文件: {fname}\n')
             f.write(feedback.strip() + '\n\n')
@@ -246,6 +248,7 @@ def main():
     parser.add_argument('--code_types', nargs='*', default=config.get('code_types', SUPPORTED_EXTS), help='需要审核的代码文件扩展名列表')
     parser.add_argument('--wiki_url_base', default=config.get('wiki_url_base'), help='Azure DevOps Wiki API 基础地址')
     parser.add_argument('--wiki_pat', default=config.get('wiki_pat'), help='用于 Wiki 上传的 PAT Token')
+    parser.add_argument('--project_name', default='unknown-project', help='项目名称，用于标识审核结果')
     args = parser.parse_args()
 
     print(f"参数: pr_only={args.pr_only}, standards={args.standards}")
@@ -272,7 +275,7 @@ def main():
         feedbacks = kimi_review_code(standard, code_files, args.moonshot_api_key, args.moonshot_api_base)
     
     print(f"审核完成，共生成 {len(feedbacks)} 个反馈...")
-    result_path = save_review_result(feedbacks, args.output)
+    result_path = save_review_result(feedbacks, args.output, args.project_name)
     
     # 上传到 Wiki
     if args.wiki_url_base and args.wiki_pat:

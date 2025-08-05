@@ -1,6 +1,13 @@
-# Azure DevOps + AI 自动代码 Review 方案
+# Azure DevOps + AI 自动代码 Review 模板
 
-本项目实现了在 Azure DevOps 平台下，基于自定义代码标准（txt），利用 AI 大模型（如 Kimi/Moonshot）对每次代码提交/PR 的变更内容进行自动化 review，并将审核结果自动归档到 Azure DevOps Wiki 和 Build Artifacts，便于团队追溯和持续改进。
+本项目提供了 Azure DevOps Pipeline 模板，用于在多个项目中实现 AI 自动代码审核。基于自定义代码标准（txt），利用 AI 大模型（如 Kimi/Moonshot）对每次代码提交/PR 的变更内容进行自动化 review，并将审核结果自动归档到 Azure DevOps Wiki 和 Build Artifacts，便于团队追溯和持续改进。
+
+## 🎯 核心特性
+
+- **模板化架构**：提供可复用的 Pipeline 模板，避免重复配置
+- **多技术栈支持**：内置 Python、JavaScript、Java 等标准
+- **统一管理**：集中管理审核标准和配置
+- **易于集成**：目标项目只需几行配置即可启用 AI 审核
 
 ---
 
@@ -17,59 +24,222 @@
 
 ## 目录结构
 
-- `code_standards.txt`    —— 代码标准文档（可自定义，推荐 txt 格式）
-- `auto_review.py`        —— 自动 review 脚本，AI 审核 PR/commit 变更
-- `azure-pipelines.yml`   —— Azure DevOps Pipeline 示例配置
-- `config.yaml`           —— 参数配置文件
-- `README.md`             —— 项目说明
-- `result/`               —— 审核结果输出目录
+```
+code-review-with-ai/
+├── templates/
+│   └── ai-review.yml              # 主模板文件
+├── standards/
+│   ├── python_standards.txt       # Python 代码标准
+│   ├── javascript_standards.txt   # JavaScript 代码标准
+│   └── java_standards.txt         # Java 代码标准
+├── examples/
+│   ├── python-project/            # Python 项目示例
+│   ├── javascript-project/        # JavaScript 项目示例
+│   └── java-project/              # Java 项目示例
+├── auto_review.py                 # 核心审核脚本
+├── test_wiki.py                   # Wiki 连接测试脚本
+├── requirements.txt               # Python 依赖
+├── config.yaml                    # 本地配置文件
+├── azure-pipelines.yml            # 当前项目 Pipeline
+└── README.md                      # 项目文档
+```
 
 ---
 
-## Azure DevOps 集成
+## 🚀 快速开始
 
-### 推荐方案：Azure DevOps 直接使用 GitHub 源
+### 方案一：在目标项目中使用模板（推荐）
 
-1. **在 Azure DevOps 中配置 GitHub 连接**
-   - 进入 Azure DevOps 项目 → `Project Settings` → `Service connections`
-   - 点击 `New service connection` → 选择 `GitHub`
-   - 授权 Azure DevOps 访问你的 GitHub 账户
+1. **在目标项目中创建 Pipeline 文件**
 
-2. **创建 Pipeline**
-   - 进入 `Pipelines` → `New pipeline`
-   - 选择 `GitHub` 作为代码源
-   - 选择仓库 `gift-is-coding/code-review-with-ai`
-   - 选择 `Existing Azure Pipelines YAML file`
-   - 选择 `azure-pipelines.yml`
+```yaml
+# 目标项目的 azure-pipelines.yml
+trigger:
+  - main
+
+pr:
+  - main
+
+extends:
+  template: https://github.com/gift-is-coding/code-review-with-ai/templates/ai-review.yml
+  parameters:
+    projectName: 'your-project-name'
+    standardsFile: 'standards/python_standards.txt'  # 根据技术栈选择
+    codeTypes:
+      - '.py'
+      - '.js'
+      - '.ts'
+    enableWikiUpload: true
+    enableArtifacts: true
+```
+
+2. **配置 Azure DevOps 变量组**
+   - 在 Azure DevOps 中创建变量组 `AI_CODE_REVIEW`
+   - 添加变量：
+     - `MOONSHOT_API_KEY`：Moonshot/Kimi API Key
+     - `WIKI_URL_BASE`：Azure DevOps Wiki API 基础地址
+     - `WIKI_PAT`：用于 Wiki 上传的 PAT Token
+
+### 方案二：本地开发和测试
+
+1. **克隆模板仓库**
+```bash
+git clone https://github.com/gift-is-coding/code-review-with-ai.git
+cd code-review-with-ai
+```
+
+2. **配置本地环境**
+```yaml
+# config.yaml
+moonshot_api_key: your-api-key
+wiki_url_base: https://dev.azure.com/giiift/test-for-HLS/_wiki/wikis/test-for-HLS.wiki/
+wiki_pat: your-pat-token
+```
+
+3. **测试 Wiki 连接**
+```bash
+python test_wiki.py
+```
+
+4. **运行代码审核**
+```bash
+python auto_review.py --project_name "test-project" --pr_only
+```
 
 ---
 
 ## 快速开始
 
-### 1. 配置代码标准
-编辑 `code_standards.txt`，定义你的团队代码规范。
+## 📋 使用指南
 
-### 2. 配置参数（推荐 config.yaml）
-你可以将常用参数写入 `config.yaml`，如：
+### 1. 选择技术栈标准
+
+根据你的项目技术栈，选择合适的标准文件：
+
+| 技术栈 | 标准文件 | 支持的文件类型 |
+|--------|----------|----------------|
+| Python | `standards/python_standards.txt` | `.py`, `.pyx`, `.pyi` |
+| JavaScript | `standards/javascript_standards.txt` | `.js`, `.ts`, `.jsx`, `.tsx`, `.vue` |
+| Java | `standards/java_standards.txt` | `.java`, `.xml`, `.properties` |
+
+### 2. 配置项目参数
+
+在目标项目的 Pipeline 中配置参数：
+
 ```yaml
-moonshot_api_key: ${MOONSHOT_API_KEY}
-standards: code_standards.txt
-output: ai_review_result.md
-pr_only: true
-code_types: ['.py', '.js', '.ts', '.jsx', '.tsx', '.java', '.go', '.cpp', '.vue', '.html', '.css']
-# Azure DevOps Wiki 配置
-wiki_url_base: ${WIKI_URL_BASE}
-wiki_pat: ${WIKI_PAT}
+extends:
+  template: https://github.com/gift-is-coding/code-review-with-ai/templates/ai-review.yml
+  parameters:
+    projectName: 'your-project-name'           # 项目名称
+    standardsFile: 'standards/python_standards.txt'  # 标准文件
+    codeTypes:                                 # 审核的文件类型
+      - '.py'
+      - '.js'
+      - '.ts'
+    enableWikiUpload: true                     # 是否上传到 Wiki
+    enableArtifacts: true                      # 是否发布到 Artifacts
 ```
 
-> ⚠️ **安全提醒**：`config.yaml` 文件包含敏感信息（API Key、PAT Token），已被添加到 `.gitignore` 中，不会被提交到版本控制系统。请确保在本地创建此文件，并妥善保管其中的敏感信息。
+### 3. 自定义代码标准
 
-### 3. 配置 API Keys 和 Wiki 设置
-- 在 Azure DevOps 项目设置中，进入 `Pipelines > Library > Variable groups`，新建变量组如 `AI_CODE_REVIEW`。
-- 添加以下变量：
-  - `MOONSHOT_API_KEY`：Moonshot/Kimi API Key，勾选"Keep this value secret"
-  - `WIKI_URL_BASE`：Azure DevOps Wiki API 基础地址
-  - `WIKI_PAT`：用于 Wiki 上传的 PAT Token，勾选"Keep this value secret"
+你可以创建自定义的标准文件：
+
+```txt
+# custom_standards.txt
+你的团队代码标准：
+
+1. 代码风格
+   - 遵循团队约定
+   - 使用统一的格式化工具
+
+2. 命名规范
+   - 变量和函数命名规则
+   - 类名命名规则
+
+3. 其他规范
+   - 错误处理要求
+   - 文档要求
+   - 测试要求
+```
+
+## 🔧 配置说明
+
+### 1. Azure DevOps 变量组配置
+
+在 Azure DevOps 中创建变量组 `AI_CODE_REVIEW`：
+
+1. **进入项目设置**：`Project Settings` → `Library`
+2. **创建变量组**：点击 `+ Variable group`
+3. **添加变量**：
+   - `MOONSHOT_API_KEY`：Moonshot/Kimi API Key（勾选"Keep this value secret"）
+   - `WIKI_URL_BASE`：Azure DevOps Wiki API 基础地址
+   - `WIKI_PAT`：用于 Wiki 上传的 PAT Token（勾选"Keep this value secret"）
+
+### 2. Wiki 配置
+
+1. **获取 Wiki URL Base**：
+   - 进入 Azure DevOps 项目
+   - 点击 `Wiki` → 选择你的 Wiki
+   - 复制基础 URL，格式类似：
+     ```
+     https://dev.azure.com/{organization}/{project}/_wiki/wikis/{wikiIdentifier}/
+     ```
+
+2. **创建 PAT Token**：
+   - 进入 `User Settings` → `Personal access tokens`
+   - 点击 `New Token`
+   - 设置权限：`Wiki (Read & Write)`
+   - 复制生成的 token
+
+## 📝 完整示例
+
+### Python 项目示例
+
+```yaml
+# python-project/azure-pipelines.yml
+trigger:
+  - main
+
+pr:
+  - main
+
+extends:
+  template: https://github.com/gift-is-coding/code-review-with-ai/templates/ai-review.yml
+  parameters:
+    projectName: 'python-project'
+    standardsFile: 'standards/python_standards.txt'
+    codeTypes:
+      - '.py'
+      - '.pyx'
+      - '.pyi'
+    enableWikiUpload: true
+    enableArtifacts: true
+```
+
+### JavaScript 项目示例
+
+```yaml
+# js-project/azure-pipelines.yml
+trigger:
+  - main
+
+pr:
+  - main
+
+extends:
+  template: https://github.com/gift-is-coding/code-review-with-ai/templates/ai-review.yml
+  parameters:
+    projectName: 'js-project'
+    standardsFile: 'standards/javascript_standards.txt'
+    codeTypes:
+      - '.js'
+      - '.ts'
+      - '.jsx'
+      - '.tsx'
+      - '.vue'
+    enableWikiUpload: true
+    enableArtifacts: true
+```
 
 ### 4. 配置 Azure DevOps Wiki
 1. **获取 Wiki URL Base**：
